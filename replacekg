@@ -1,296 +1,127 @@
--- LocalScript: Mobile-friendly Pet KG Changer (visual-only)
--- Place in StarterPlayerScripts
+-- LocalScript inside StarterGui > ScreenGui
+-- Full Pet KG changer (visual + inventory KG + BillboardGui)
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local guiParent = player:WaitForChild("PlayerGui")
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PetKGChanger"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- UI creation (mobile-friendly sizing)
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PetKGChangerGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = guiParent
-screenGui.IgnoreGuiInset = false
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 180)
+Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
 
-local frame = Instance.new("Frame")
-frame.Name = "Main"
-frame.Size = UDim2.new(0, 360, 0, 300)         -- wide for mobile; will scale on small screens
-frame.Position = UDim2.new(0.5, -180, 0.35, -150)
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
-frame.Active = true
-frame.ZIndex = 2
+local UIStroke = Instance.new("UIStroke", Frame)
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
 
-local uicorner = Instance.new("UICorner"); uicorner.CornerRadius = UDim.new(0,12); uicorner.Parent = frame
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 8)
 
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 0, 48)
-title.Position = UDim2.new(0, 10, 0, 6)
-title.BackgroundTransparency = 1
-title.Text = "Pet KG Changer (Visual)"
-title.TextScaled = true
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.Parent = frame
+-- Helper function for labels + textbox
+local function createRow(yPos, labelText)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0, 80, 0, 30)
+    Label.Position = UDim2.new(0, 10, 0, yPos)
+    Label.BackgroundTransparency = 1
+    Label.Text = labelText
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 16
+    Label.Font = Enum.Font.GothamBold
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
 
--- Input helper function
-local function makeBox(y, placeholder)
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0.94, 0, 0, 44)
-    box.Position = UDim2.new(0.03, 0, 0, y)
-    box.Text = ""
-    box.PlaceholderText = placeholder
-    box.TextScaled = true
-    box.ClearTextOnFocus = false
-    box.Parent = frame
+    local TextBox = Instance.new("TextBox")
+    TextBox.Size = UDim2.new(0, 180, 0, 30)
+    TextBox.Position = UDim2.new(0, 100, 0, yPos)
+    TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextBox.PlaceholderText = "Enter here..."
+    TextBox.Font = Enum.Font.Gotham
+    TextBox.TextSize = 16
+    TextBox.Parent = Frame
 
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0,8); corner.Parent = box
-    box.BackgroundColor3 = Color3.fromRGB(45,45,45)
-    box.TextColor3 = Color3.fromRGB(235,235,235)
-    return box
+    local corner = Instance.new("UICorner", TextBox)
+    corner.CornerRadius = UDim.new(0, 6)
+
+    return TextBox
 end
 
-local petNameBox = makeBox(60, "Pet Name (type exactly)")
-local oldKgBox = makeBox(120, "Old KG (e.g. 120)")
-local newKgBox = makeBox(180, "New KG (e.g. 200)")
+-- Rows
+local PetNameBox = createRow(20, "Pet Name:")
+local OldKGBox = createRow(60, "Old KG:")
+local NewKGBox = createRow(100, "New KG:")
 
--- Big apply button (touch-friendly)
-local applyBtn = Instance.new("TextButton")
-applyBtn.Size = UDim2.new(0.94, 0, 0, 48)
-applyBtn.Position = UDim2.new(0.03, 0, 0, 240)
-applyBtn.Text = "Apply Change"
-applyBtn.Font = Enum.Font.SourceSansBold
-applyBtn.TextScaled = true
-applyBtn.BackgroundColor3 = Color3.fromRGB(60,140,60)
-applyBtn.TextColor3 = Color3.fromRGB(1,1,1)
-applyBtn.Parent = frame
-local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0,10); btnCorner.Parent = applyBtn
+-- Button
+local ChangeBtn = Instance.new("TextButton")
+ChangeBtn.Size = UDim2.new(0, 260, 0, 30)
+ChangeBtn.Position = UDim2.new(0, 20, 0, 140)
+ChangeBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+ChangeBtn.Text = "Change KG"
+ChangeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ChangeBtn.TextSize = 16
+ChangeBtn.Font = Enum.Font.GothamBold
+ChangeBtn.Parent = Frame
+Instance.new("UICorner", ChangeBtn)
 
--- Status label
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -20, 0, 28)
-status.Position = UDim2.new(0, 10, 1, -36)
-status.BackgroundTransparency = 1
-status.TextScaled = true
-status.TextColor3 = Color3.fromRGB(210,210,210)
-status.Text = "Hold your pet, type fields, then press Apply."
-status.Font = Enum.Font.SourceSans
-status.Parent = frame
+-- Main Function
+ChangeBtn.MouseButton1Click:Connect(function()
+    local petName = PetNameBox.Text
+    local newKG = tonumber(NewKGBox.Text)
 
--- Make Frame draggable for touch and mouse (robust)
-do
-    local dragging, dragInput, dragStart, startPos
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if petName == "" or not newKG then
+        warn("Please fill in Pet Name and New KG")
+        return
     end
 
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            dragInput = input
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+    -- Find pet in workspace
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local pet = workspace:FindFirstChild(petName)
 
-    frame.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
+    if pet then
+        -- BillboardGui display
+        local bb = pet:FindFirstChild("PetKGDisplay") or Instance.new("BillboardGui")
+        bb.Name = "PetKGDisplay"
+        bb.Size = UDim2.new(0, 100, 0, 40)
+        bb.StudsOffset = Vector3.new(0, 3, 0)
+        bb.AlwaysOnTop = true
+        bb.Parent = pet:FindFirstChildWhichIsA("HumanoidRootPart") or pet.PrimaryPart
 
-    -- Also support Move for touch
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-end
+        local label = bb:FindFirstChild("TextLabel") or Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 0)
+        label.TextScaled = true
+        label.Font = Enum.Font.GothamBold
+        label.Parent = bb
+        label.Text = tostring(newKG) .. " KG"
 
--- Utility: detect "held/equipped" pet in player's Character
-local function getHeldPet()
-    local char = player.Character
-    if not char then return nil end
-
-    -- look for a Model directly under character that contains a KG-like NumberValue
-    for _, child in ipairs(char:GetChildren()) do
-        if child:IsA("Model") then
-            local kg = child:FindFirstChild("KG") or child:FindFirstChild("PetKG") or child:FindFirstChild("Weight")
-            if kg and kg:IsA("NumberValue") then
-                return child, kg
-            end
-        end
-    end
-
-    -- fallback: look deeper in character descendants
-    for _, desc in ipairs(char:GetDescendants()) do
-        if desc:IsA("Model") then
-            local kg = desc:FindFirstChild("KG") or desc:FindFirstChild("PetKG") or desc:FindFirstChild("Weight")
-            if kg and kg:IsA("NumberValue") then
-                return desc, kg
-            end
-        end
-    end
-
-    -- nothing
-    return nil, nil
-end
-
--- Replace in-world billboards and text labels inside the pet
-local function replaceTextInPet(pet, oldKGStr, newKGStr, petName, newPetName)
-    if not pet then return 0 end
-    local replaced = 0
-    for _, gui in ipairs(pet:GetDescendants()) do
-        if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
-            for _, child in ipairs(gui:GetDescendants()) do
-                if child:IsA("TextLabel") or child:IsA("TextButton") then
-                    local t = child.Text or ""
-                    -- replace occurrences like "120 kg" (case-insensitive)
-                    if oldKGStr ~= "" and string.find(string.lower(t), string.lower(oldKGStr)) then
-                        child.Text = string.gsub(t, oldKGStr, newKGStr)
-                        replaced = replaced + 1
-                    end
-                    -- optionally replace pet name if user supplied new name
-                    if petName and newPetName and petName ~= "" and string.find(string.lower(t), string.lower(petName)) then
-                        child.Text = string.gsub(child.Text, petName, newPetName)
-                        replaced = replaced + 1
-                    end
+        -- Scale pet size visually
+        if pet.PrimaryPart then
+            local scaleFactor = newKG / (tonumber(OldKGBox.Text) or newKG)
+            pet:SetPrimaryPartCFrame(pet.PrimaryPart.CFrame) -- keep position
+            for _, part in ipairs(pet:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Size = part.Size * scaleFactor
                 end
             end
         end
-    end
-    return replaced
-end
 
--- Try to update player's inventory UI (look for frames named like pet or a WeightLabel child)
-local function updateInventoryDisplay(petName, oldKGStr, newKGStr, newPetName)
-    local updated = 0
-    for _, gui in ipairs(guiParent:GetDescendants()) do
-        -- find frames that likely represent pets
-        if gui:IsA("Frame") or gui:IsA("TextButton") or gui:IsA("TextLabel") then
-            -- If this is a frame with Name equal to petName
-            if gui.Name == petName then
-                -- find child weight label
-                local weightLabel = gui:FindFirstChild("WeightLabel") or gui:FindFirstChildWhichIsA("TextLabel")
-                if weightLabel and weightLabel:IsA("TextLabel") then
-                    if string.find(weightLabel.Text, oldKGStr) then
-                        weightLabel.Text = string.gsub(weightLabel.Text, oldKGStr, newKGStr)
-                        updated = updated + 1
-                    end
-                end
-            end
-
-            -- also, try to replace anywhere the oldKG appears alongside petName
-            if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-                local txt = gui.Text
-                if txt and string.find(string.lower(txt), string.lower(petName)) and string.find(txt, oldKGStr) then
-                    gui.Text = string.gsub(txt, oldKGStr, newKGStr)
-                    if newPetName and newPetName ~= "" then
-                        gui.Text = string.gsub(gui.Text, petName, newPetName)
-                    end
-                    updated = updated + 1
+        -- Update inventory UI (visual only)
+        local inv = player.PlayerGui:FindFirstChild("Inventory")
+        if inv then
+            for _, obj in ipairs(inv:GetDescendants()) do
+                if obj:IsA("TextLabel") and string.find(obj.Text, petName) then
+                    obj.Text = petName .. " - " .. tostring(newKG) .. " KG"
                 end
             end
         end
-    end
-    return updated
-end
-
--- Main apply function
-applyBtn.MouseButton1Click:Connect(function()
-    local petNameInput = tostring(petNameBox.Text):gsub("^%s*(.-)%s*$","%1") -- trim
-    local oldKGInput = tostring(oldKgBox.Text):gsub("^%s*(.-)%s*$","%1")
-    local newKGInput = tostring(newKgBox.Text):gsub("^%s*(.-)%s*$","%1")
-
-    if petNameInput == "" or oldKGInput == "" or newKGInput == "" then
-        status.Text = "Please fill Pet Name, Old KG and New KG."
-        return
-    end
-
-    local pet, kgValue = getHeldPet()
-    if not pet then
-        status.Text = "No pet detected as 'held'. Hold the pet first."
-        return
-    end
-
-    -- determine pet display name (StringValue PetName or model name)
-    local displayName = pet:FindFirstChild("PetName")
-    local petDisplay = displayName and displayName.Value or pet.Name
-
-    -- check typed pet name matches actually held pet's name (user requested it)
-    if string.lower(petNameInput) ~= string.lower(petDisplay) then
-        status.Text = "Typed pet name does not match the held pet ('" .. tostring(petDisplay) .. "')."
-        return
-    end
-
-    -- validate oldKG matches actual kg (best-effort check)
-    local actualKG = nil
-    if kgValue and kgValue:IsA("NumberValue") then
-        actualKG = tostring(kgValue.Value)
-    elseif pet:GetAttribute("KG") then
-        actualKG = tostring(pet:GetAttribute("KG"))
-    end
-
-    if actualKG and actualKG ~= oldKGInput then
-        status.Text = "Warning: Old KG typed ("..oldKGInput..") doesn't match held pet's KG ("..actualKG.."). Press Apply again to force change."
-        -- if user still wants to proceed they can press apply again; we stop here to avoid accidental changes
-        return
-    end
-
-    -- apply the visual-only change
-    local numericNewKG = tonumber(newKGInput) or nil
-    if numericNewKG == nil then
-        status.Text = "New KG must be a number."
-        return
-    end
-
-    -- update the NumberValue locally if exists (visual-only)
-    if kgValue and kgValue:IsA("NumberValue") then
-        -- write locally; server may overwrite later
-        kgValue.Value = numericNewKG
     else
-        -- try attribute
-        if pet:GetAttribute("KG") ~= nil then
-            pet:SetAttribute("KG", numericNewKG)
-        end
+        warn("Pet not found in workspace.")
     end
-
-    -- update in-world billboards and labels inside the pet
-    local replacedInPet = replaceTextInPet(pet, oldKGInput, newKGInput, petNameInput, petNameInput)
-
-    -- update inventory display under player gui
-    local updatedInventory = updateInventoryDisplay(petNameInput, oldKGInput, newKGInput, petNameInput)
-
-    status.Text = ("Applied: KG -> %s. Pet labels changed: %d, Inventory updated: %d"):format(newKGInput, replacedInPet, updatedInventory)
 end)
-
--- keep GUI size responsive on small screens
-local function adaptForViewport()
-    local vp = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280,720)
-    if vp.X < 420 then -- very narrow (phone portrait)
-        frame.Size = UDim2.new(0, math.max(300, vp.X - 40), 0, 280)
-        frame.Position = UDim2.new(0.5, 0, 0.35, 0)
-        frame.AnchorPoint = Vector2.new(0.5, 0.5)
-    else
-        frame.Size = UDim2.new(0, 360, 0, 300)
-    end
-end
-
-adaptForViewport()
-workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(adaptForViewport)
-if workspace.CurrentCamera then
-    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(adaptForViewport)
-end
-
--- End of script
