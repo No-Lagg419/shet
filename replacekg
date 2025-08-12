@@ -1,0 +1,119 @@
+-- // Local Visual-Only Pet Name + KG Editor for Grow a Garden
+-- // Made by ChatGPT
+
+-- Create the GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PetKGEditor"
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 250, 0, 180)
+Frame.Position = UDim2.new(0.5, -125, 0.5, -90)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 2
+Frame.Parent = ScreenGui
+Frame.Active = true
+Frame.Draggable = true
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "Pet Name & KG Editor"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Parent = Frame
+
+local CurrentPetLabel = Instance.new("TextLabel")
+CurrentPetLabel.Size = UDim2.new(1, -20, 0, 20)
+CurrentPetLabel.Position = UDim2.new(0, 10, 0, 35)
+CurrentPetLabel.BackgroundTransparency = 1
+CurrentPetLabel.Text = "Current Pet: None"
+CurrentPetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+CurrentPetLabel.TextScaled = true
+CurrentPetLabel.Parent = Frame
+
+local CurrentKGLabel = Instance.new("TextLabel")
+CurrentKGLabel.Size = UDim2.new(1, -20, 0, 20)
+CurrentKGLabel.Position = UDim2.new(0, 10, 0, 60)
+CurrentKGLabel.BackgroundTransparency = 1
+CurrentKGLabel.Text = "Current KG: 0"
+CurrentKGLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+CurrentKGLabel.TextScaled = true
+CurrentKGLabel.Parent = Frame
+
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(1, -20, 0, 25)
+NameBox.Position = UDim2.new(0, 10, 0, 90)
+NameBox.PlaceholderText = "New Pet Name"
+NameBox.Text = ""
+NameBox.TextScaled = true
+NameBox.Parent = Frame
+
+local KGBox = Instance.new("TextBox")
+KGBox.Size = UDim2.new(1, -20, 0, 25)
+KGBox.Position = UDim2.new(0, 10, 0, 120)
+KGBox.PlaceholderText = "New KG"
+KGBox.Text = ""
+KGBox.TextScaled = true
+KGBox.Parent = Frame
+
+local ApplyButton = Instance.new("TextButton")
+ApplyButton.Size = UDim2.new(1, -20, 0, 25)
+ApplyButton.Position = UDim2.new(0, 10, 0, 150)
+ApplyButton.Text = "Apply"
+ApplyButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+ApplyButton.TextScaled = true
+ApplyButton.Parent = Frame
+
+-- Function to detect current pet
+local function GetHeldPet()
+    local char = game.Players.LocalPlayer.Character
+    if not char then return nil end
+    for _, obj in pairs(char:GetChildren()) do
+        if obj:IsA("Model") and obj:FindFirstChild("PetName") and obj:FindFirstChild("PetKG") then
+            return obj
+        end
+    end
+    return nil
+end
+
+-- Update labels when holding a pet
+game:GetService("RunService").RenderStepped:Connect(function()
+    local pet = GetHeldPet()
+    if pet then
+        local nameVal = pet:FindFirstChild("PetName")
+        local kgVal = pet:FindFirstChild("PetKG")
+        if nameVal and kgVal then
+            CurrentPetLabel.Text = "Current Pet: " .. tostring(nameVal.Value)
+            CurrentKGLabel.Text = "Current KG: " .. tostring(kgVal.Value)
+        end
+    else
+        CurrentPetLabel.Text = "Current Pet: None"
+        CurrentKGLabel.Text = "Current KG: 0"
+    end
+end)
+
+-- Apply changes
+ApplyButton.MouseButton1Click:Connect(function()
+    local pet = GetHeldPet()
+    if pet then
+        local nameVal = pet:FindFirstChild("PetName")
+        local kgVal = pet:FindFirstChild("PetKG")
+
+        if nameVal and NameBox.Text ~= "" then
+            nameVal.Value = NameBox.Text
+        end
+        if kgVal and tonumber(KGBox.Text) then
+            kgVal.Value = tonumber(KGBox.Text)
+        end
+
+        -- Try to update inventory UI visually (if possible)
+        for _, ui in pairs(game.Players.LocalPlayer.PlayerGui:GetDescendants()) do
+            if ui:IsA("TextLabel") or ui:IsA("TextButton") then
+                if tostring(ui.Text):find(tostring(CurrentPetLabel.Text)) then
+                    ui.Text = NameBox.Text .. " - " .. KGBox.Text .. " KG"
+                end
+            end
+        end
+    end
+end)
