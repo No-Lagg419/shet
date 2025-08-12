@@ -1,127 +1,154 @@
--- LocalScript inside StarterGui > ScreenGui
--- Full Pet KG changer (visual + inventory KG + BillboardGui)
+-- Local Pet KG Changer (Visual Only)
+-- Put this in StarterPlayerScripts
 
--- Create GUI
+-- // Create GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "PetKGChanger"
-ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "PetKgChanger"
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 180)
+Frame.Size = UDim2.new(0, 250, 0, 180)
 Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.BorderSizePixel = 0
 Frame.Active = true
 Frame.Draggable = true
 Frame.Parent = ScreenGui
 
-local UIStroke = Instance.new("UIStroke", Frame)
-UIStroke.Thickness = 2
-UIStroke.Color = Color3.fromRGB(255, 255, 255)
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Title.Text = "Pet KG Changer"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
+Title.Parent = Frame
 
-local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0, 8)
-
--- Helper function for labels + textbox
-local function createRow(yPos, labelText)
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0, 80, 0, 30)
-    Label.Position = UDim2.new(0, 10, 0, yPos)
-    Label.BackgroundTransparency = 1
-    Label.Text = labelText
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.TextSize = 16
-    Label.Font = Enum.Font.GothamBold
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Frame
-
-    local TextBox = Instance.new("TextBox")
-    TextBox.Size = UDim2.new(0, 180, 0, 30)
-    TextBox.Position = UDim2.new(0, 100, 0, yPos)
-    TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextBox.PlaceholderText = "Enter here..."
-    TextBox.Font = Enum.Font.Gotham
-    TextBox.TextSize = 16
-    TextBox.Parent = Frame
-
-    local corner = Instance.new("UICorner", TextBox)
-    corner.CornerRadius = UDim.new(0, 6)
-
-    return TextBox
+-- Labels & TextBoxes
+local function createLabelAndBox(yPos, labelText)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.4, 0, 0, 25)
+	label.Position = UDim2.new(0, 5, 0, yPos)
+	label.BackgroundTransparency = 1
+	label.Text = labelText
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 18
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = Frame
+	
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.new(0.5, 0, 0, 25)
+	box.Position = UDim2.new(0.45, 0, 0, yPos)
+	box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	box.TextColor3 = Color3.new(1, 1, 1)
+	box.Font = Enum.Font.SourceSans
+	box.TextSize = 18
+	box.ClearTextOnFocus = false
+	box.Parent = Frame
+	
+	return box
 end
 
--- Rows
-local PetNameBox = createRow(20, "Pet Name:")
-local OldKGBox = createRow(60, "Old KG:")
-local NewKGBox = createRow(100, "New KG:")
+local PetNameBox = createLabelAndBox(40, "Pet Name:")
+local OldKgBox = createLabelAndBox(70, "Old KG:")
+local NewKgBox = createLabelAndBox(100, "New KG:")
 
 -- Button
-local ChangeBtn = Instance.new("TextButton")
-ChangeBtn.Size = UDim2.new(0, 260, 0, 30)
-ChangeBtn.Position = UDim2.new(0, 20, 0, 140)
-ChangeBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-ChangeBtn.Text = "Change KG"
-ChangeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ChangeBtn.TextSize = 16
-ChangeBtn.Font = Enum.Font.GothamBold
-ChangeBtn.Parent = Frame
-Instance.new("UICorner", ChangeBtn)
+local ChangeButton = Instance.new("TextButton")
+ChangeButton.Size = UDim2.new(0.9, 0, 0, 30)
+ChangeButton.Position = UDim2.new(0.05, 0, 0, 140)
+ChangeButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+ChangeButton.Text = "Change KG"
+ChangeButton.TextColor3 = Color3.new(1, 1, 1)
+ChangeButton.Font = Enum.Font.SourceSansBold
+ChangeButton.TextSize = 18
+ChangeButton.Parent = Frame
 
--- Main Function
-ChangeBtn.MouseButton1Click:Connect(function()
-    local petName = PetNameBox.Text
-    local newKG = tonumber(NewKGBox.Text)
+-- Function: Change Pet KG (Visual Only)
+local function changePetKg(petName, newKg)
+	local player = game.Players.LocalPlayer
+	local char = player.Character or player.CharacterAdded:Wait()
+	local pet = nil
+	
+	-- Find pet model in character
+	for _, obj in ipairs(char:GetChildren()) do
+		if obj.Name == petName and obj:IsA("Model") then
+			pet = obj
+			break
+		end
+	end
+	
+	if not pet then
+		warn("Pet not found:", petName)
+		return
+	end
+	
+	-- Scale pet visually
+	local scaleFactor = tonumber(newKg) / 10
+	if scaleFactor < 0.5 then scaleFactor = 0.5 end
+	for _, part in ipairs(pet:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.Size = part.Size * scaleFactor
+		end
+	end
+	
+	-- Add BillboardGui above pet
+	local billboard = pet:FindFirstChild("PetKgBillboard")
+	if not billboard then
+		billboard = Instance.new("BillboardGui")
+		billboard.Name = "PetKgBillboard"
+		billboard.Size = UDim2.new(0, 100, 0, 50)
+		billboard.StudsOffset = Vector3.new(0, 3, 0)
+		billboard.AlwaysOnTop = true
+		billboard.Parent = pet:FindFirstChildWhichIsA("BasePart") or pet.PrimaryPart
+		
+		local label = Instance.new("TextLabel")
+		label.Name = "KgLabel"
+		label.Size = UDim2.new(1, 0, 1, 0)
+		label.BackgroundTransparency = 1
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.Font = Enum.Font.SourceSansBold
+		label.TextSize = 18
+		label.Parent = billboard
+	end
+	billboard.KgLabel.Text = tostring(newKg) .. " KG"
+	
+	-- Update inventory UI (client-side only)
+	local inventoryGui = player.PlayerGui:FindFirstChild("Inventory") -- adjust this name to match your game
+	if inventoryGui then
+		for _, label in ipairs(inventoryGui:GetDescendants()) do
+			if label:IsA("TextLabel") and string.find(label.Text, petName) then
+				label.Text = petName .. " - " .. tostring(newKg) .. " KG"
+			end
+		end
+	end
+end
 
-    if petName == "" or not newKG then
-        warn("Please fill in Pet Name and New KG")
-        return
-    end
+-- Loading animation
+local function showLoading(callback)
+	local dots = 0
+	for i = 1, 6 do
+		dots = (dots % 3) + 1
+		ChangeButton.Text = "Loading" .. string.rep(".", dots)
+		task.wait(0.4)
+	end
+	callback()
+	ChangeButton.Text = "Change KG"
+end
 
-    -- Find pet in workspace
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local pet = workspace:FindFirstChild(petName)
-
-    if pet then
-        -- BillboardGui display
-        local bb = pet:FindFirstChild("PetKGDisplay") or Instance.new("BillboardGui")
-        bb.Name = "PetKGDisplay"
-        bb.Size = UDim2.new(0, 100, 0, 40)
-        bb.StudsOffset = Vector3.new(0, 3, 0)
-        bb.AlwaysOnTop = true
-        bb.Parent = pet:FindFirstChildWhichIsA("HumanoidRootPart") or pet.PrimaryPart
-
-        local label = bb:FindFirstChild("TextLabel") or Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(255, 255, 0)
-        label.TextScaled = true
-        label.Font = Enum.Font.GothamBold
-        label.Parent = bb
-        label.Text = tostring(newKG) .. " KG"
-
-        -- Scale pet size visually
-        if pet.PrimaryPart then
-            local scaleFactor = newKG / (tonumber(OldKGBox.Text) or newKG)
-            pet:SetPrimaryPartCFrame(pet.PrimaryPart.CFrame) -- keep position
-            for _, part in ipairs(pet:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Size = part.Size * scaleFactor
-                end
-            end
-        end
-
-        -- Update inventory UI (visual only)
-        local inv = player.PlayerGui:FindFirstChild("Inventory")
-        if inv then
-            for _, obj in ipairs(inv:GetDescendants()) do
-                if obj:IsA("TextLabel") and string.find(obj.Text, petName) then
-                    obj.Text = petName .. " - " .. tostring(newKG) .. " KG"
-                end
-            end
-        end
-    else
-        warn("Pet not found in workspace.")
-    end
+-- Button click event
+ChangeButton.MouseButton1Click:Connect(function()
+	local petName = PetNameBox.Text
+	local newKg = tonumber(NewKgBox.Text)
+	if not petName or not newKg then
+		warn("Please fill Pet Name and New KG")
+		return
+	end
+	
+	showLoading(function()
+		changePetKg(petName, newKg)
+	end)
 end)
